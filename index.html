@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizador de Citas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fuentes personalizadas */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fondo gris claro */
+        }
+        /* Estilos para el mensaje de confirmación/error */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none; /* Oculto por defecto */
+            text-align: center;
+            font-weight: bold;
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Verde claro */
+            color: #065f46; /* Verde oscuro */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Rojo claro */
+            color: #991b1b; /* Rojo oscuro */
+        }
+        /* Estilos para el indicador de carga */
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 1.5rem 3rem;
+            border-radius: 0.75rem;
+            z-index: 2000;
+            display: none;
+            font-size: 1.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center min-h-screen">
+    <div class="container mx-auto bg-white rounded-lg shadow-xl p-6 sm:p-8 md:p-10 max-w-4xl w-full">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-center text-gray-800 mb-8">Organizador de Citas</h1>
+
+        <!-- Mensaje de confirmación/error -->
+        <div id="messageBox" class="message-box"></div>
+        <!-- Indicador de carga -->
+        <div id="loadingIndicator" class="loading-indicator">Cargando...</div>
+
+        <!-- Sección de Configuración del Negocio -->
+        <div class="bg-gray-50 p-6 rounded-lg mb-8 shadow-inner">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Configuración del Negocio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="businessStartTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de Inicio (HH:MM)</label>
+                    <input type="time" id="businessStartTime" value="09:00" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="businessEndTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de Fin (HH:MM)</label>
+                    <input type="time" id="businessEndTime" value="17:00" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="appointmentDuration" class="block text-sm font-medium text-gray-700 mb-1">Duración Cita (Minutos)</label>
+                    <input type="number" id="appointmentDuration" value="30" min="5" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+            </div>
+            <button id="saveConfigBtn" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Guardar Configuración
+            </button>
+        </div>
+
+        <!-- Sección de Agendar Cita -->
+        <div class="bg-gray-50 p-6 rounded-lg mb-8 shadow-inner">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Agendar Nueva Cita</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label for="appointmentDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha de la Cita</label>
+                    <input type="date" id="appointmentDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="appointmentTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de la Cita (HH:MM)</label>
+                    <input type="time" id="appointmentTime" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Cliente</label>
+                    <input type="text" id="clientName" placeholder="Ej: Juan Pérez" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+            </div>
+            <button id="addAppointmentBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Agendar Cita
+            </button>
+        </div>
+
+        <!-- Sección de Visualización y Exportación -->
+        <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Horario de Citas</h2>
+            <div class="mb-4">
+                <label for="displayDate" class="block text-sm font-medium text-gray-700 mb-1">Ver Citas para la Fecha:</label>
+                <input type="date" id="displayDate" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            <button id="generateScheduleBtn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105 mb-4 md:mb-0 md:mr-4">
+                Generar Horario del Día
+            </button>
+            <button id="exportExcelBtn" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Exportar a Excel (CSV)
+            </button>
+
+            <div id="scheduleTableContainer" class="mt-6 overflow-x-auto">
+                <!-- La tabla de citas se generará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL base de tu API de FastAPI
+        const API_BASE_URL = 'http://127.0.0.1:8000'; // Asegúrate de que coincida con el puerto de tu FastAPI
+
+        // Referencias a elementos del DOM
+        const businessStartTimeInput = document.getElementById('businessStartTime');
+        const businessEndTimeInput = document.getElementById('businessEndTime');
+        const appointmentDurationInput = document.getElementById('appointmentDuration');
+        const saveConfigBtn = document.getElementById('saveConfigBtn'); // Nuevo botón para guardar configuración
+        const appointmentDateInput = document.getElementById('appointmentDate');
+        const appointmentTimeInput = document.getElementById('appointmentTime');
+        const clientNameInput = document.getElementById('clientName');
+        const addAppointmentBtn = document.getElementById('addAppointmentBtn');
+        const displayDateInput = document.getElementById('displayDate');
+        const generateScheduleBtn = document.getElementById('generateScheduleBtn');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const scheduleTableContainer = document.getElementById('scheduleTableContainer');
+        const messageBox = document.getElementById('messageBox');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        // Variables para almacenar la configuración del negocio (obtenida del backend)
+        let businessConfig = {
+            business_start_time: "09:00",
+            business_end_time: "17:00",
+            appointment_duration: 30
+        };
+
+        // Función para mostrar mensajes al usuario
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Añade la clase de tipo (success/error)
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000); // Ocultar después de 3 segundos
+        }
+
+        // Función para mostrar/ocultar el indicador de carga
+        function showLoading() {
+            loadingIndicator.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Establecer la fecha actual por defecto en los selectores de fecha
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayFormatted = `${yyyy}-${mm}-${dd}`;
+        appointmentDateInput.value = todayFormatted;
+        displayDateInput.value = todayFormatted;
+
+        // Función para convertir una hora (HH:MM) a minutos desde la medianoche
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        // Función para convertir minutos desde la medianoche a una hora (HH:MM)
+        function minutesToTime(totalMinutes) {
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // --- Interacción con el Backend ---
+
+        // Cargar configuración del negocio al iniciar
+        async function loadBusinessConfig() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/config`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const config = await response.json();
+                businessConfig = config; // Actualizar la variable global
+                businessStartTimeInput.value = config.business_start_time;
+                businessEndTimeInput.value = config.business_end_time;
+                appointmentDurationInput.value = config.appointment_duration;
+            } catch (error) {
+                console.error('Error al cargar la configuración del negocio:', error);
+                showMessage('Error al cargar la configuración del negocio.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Guardar configuración del negocio
+        saveConfigBtn.addEventListener('click', async () => {
+            const newConfig = {
+                business_start_time: businessStartTimeInput.value,
+                business_end_time: businessEndTimeInput.value,
+                appointment_duration: parseInt(appointmentDurationInput.value)
+            };
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/config`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newConfig)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+                businessConfig = await response.json(); // Actualizar con la configuración guardada
+                showMessage('Configuración guardada exitosamente.', 'success');
+            } catch (error) {
+                console.error('Error al guardar la configuración:', error);
+                showMessage(`Error al guardar la configuración: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Función para agregar una nueva cita (ahora interactúa con el backend)
+        addAppointmentBtn.addEventListener('click', async () => {
+            const date = appointmentDateInput.value;
+            const time = appointmentTimeInput.value;
+            const clientName = clientNameInput.value.trim();
+            // La duración se puede enviar o dejar que el backend use la por defecto
+            const duration = parseInt(appointmentDurationInput.value); // Se envía la duración actual del input
+
+            if (!date || !time || !clientName || !duration) {
+                showMessage('Por favor, complete todos los campos para agendar la cita.', 'error');
+                return;
+            }
+
+            const newAppointment = {
+                date: date,
+                time: time,
+                client_name: clientName,
+                duration: duration // Se envía la duración específica de la cita
+            };
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newAppointment)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                await response.json(); // La cita agendada
+                showMessage('Cita agendada exitosamente.', 'success');
+                clientNameInput.value = ''; // Limpiar campo de cliente
+                generateScheduleBtn.click(); // Regenerar el horario para la fecha actual
+            } catch (error) {
+                console.error('Error al agendar la cita:', error);
+                showMessage(`Error al agendar la cita: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Función para generar y mostrar el horario de citas para una fecha específica (obtiene datos del backend)
+        generateScheduleBtn.addEventListener('click', async () => {
+            const selectedDate = displayDateInput.value;
+            if (!selectedDate) {
+                showMessage('Por favor, seleccione una fecha para generar el horario.', 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/appointments?date=${selectedDate}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const appointmentsForDate = await response.json();
+
+                // Ordenar citas por hora para procesarlas en orden cronológico
+                appointmentsForDate.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+                const businessStartMinutes = timeToMinutes(businessConfig.business_start_time);
+                const businessEndMinutes = timeToMinutes(businessConfig.business_end_time);
+                const defaultAppointmentDuration = businessConfig.appointment_duration;
+
+                let html = `
+                    <table class="min-w-full bg-white rounded-lg shadow-md">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-sm font-semibold text-gray-700 rounded-tl-lg">Hora</th>
+                                <th class="py-3 px-4 text-left text-sm font-semibold text-gray-700">Cliente</th>
+                                <th class="py-3 px-4 text-left text-sm font-semibold text-gray-700 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                let currentTime = businessStartMinutes;
+                let hasAppointmentsForDate = false;
+
+                // Iterar sobre las citas agendadas y rellenar los huecos con disponibilidad
+                for (const appt of appointmentsForDate) {
+                    const apptStartTime = timeToMinutes(appt.time);
+                    const apptActualDuration = appt.duration || defaultAppointmentDuration;
+                    const apptEndTime = apptStartTime + apptActualDuration;
+
+                    // 1. Rellenar los slots disponibles antes de esta cita
+                    while (currentTime < apptStartTime && currentTime < businessEndMinutes) {
+                        const availableSlotStart = currentTime;
+                        // El final del slot disponible será el mínimo entre:
+                        // - El tiempo actual + la duración por defecto
+                        // - La hora de inicio de la próxima cita
+                        // - La hora de fin del horario de negocio
+                        const availableSlotEnd = Math.min(currentTime + defaultAppointmentDuration, apptStartTime, businessEndMinutes);
+                        
+                        // Asegurarse de no añadir slots de duración cero
+                        if (availableSlotEnd > availableSlotStart) {
+                            html += `
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-sm text-gray-600">${minutesToTime(availableSlotStart)} - ${minutesToTime(availableSlotEnd)}</td>
+                                    <td class="py-3 px-4 text-sm text-gray-400 italic">Disponible</td>
+                                    <td class="py-3 px-4 text-sm"></td>
+                                </tr>
+                            `;
+                        }
+                        currentTime = availableSlotEnd; // Mover el tiempo actual al final del slot disponible
+                    }
+
+                    // 2. Añadir la cita agendada actual
+                    // Solo si la cita comienza en o después del tiempo actual y dentro del horario de negocio
+                    if (apptStartTime >= currentTime && apptStartTime < businessEndMinutes) {
+                        hasAppointmentsForDate = true;
+                        html += `
+                            <tr class="border-b border-gray-200 hover:bg-blue-50">
+                                <td class="py-3 px-4 text-sm text-gray-800 font-medium">${appt.time} - ${minutesToTime(apptEndTime)}</td>
+                                <td class="py-3 px-4 text-sm text-gray-800">${appt.client_name}</td>
+                                <td class="py-3 px-4 text-sm">
+                                    <button data-id="${appt.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-md transition duration-200">Eliminar</button>
+                                </td>
+                            </tr>
+                        `;
+                        currentTime = apptEndTime; // Mover el tiempo actual al final de esta cita
+                    }
+                }
+
+                // 3. Rellenar cualquier slot disponible después de la última cita agendada
+                while (currentTime < businessEndMinutes) {
+                    const availableSlotStart = currentTime;
+                    const availableSlotEnd = Math.min(currentTime + defaultAppointmentDuration, businessEndMinutes);
+                    
+                    if (availableSlotEnd > availableSlotStart) {
+                        html += `
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-4 text-sm text-gray-600">${minutesToTime(availableSlotStart)} - ${minutesToTime(availableSlotEnd)}</td>
+                                <td class="py-3 px-4 text-sm text-gray-400 italic">Disponible</td>
+                                <td class="py-3 px-4 text-sm"></td>
+                            </tr>
+                        `;
+                    }
+                    currentTime = availableSlotEnd;
+                }
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                if (!hasAppointmentsForDate && appointmentsForDate.length === 0) {
+                    scheduleTableContainer.innerHTML = `<p class="text-center text-gray-600 mt-4">No hay citas agendadas para el ${selectedDate}.</p>`;
+                } else {
+                    scheduleTableContainer.innerHTML = html;
+                    // Adjuntar eventos a los botones de eliminar
+                    document.querySelectorAll('.delete-btn').forEach(button => {
+                        button.addEventListener('click', async (event) => {
+                            const idToDelete = event.target.dataset.id;
+                            showLoading();
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/appointments/${idToDelete}`, {
+                                    method: 'DELETE'
+                                });
+                                if (!response.ok) {
+                                    const errorData = await response.json();
+                                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                                }
+                                showMessage('Cita eliminada.', 'success');
+                                generateScheduleBtn.click(); // Regenerar el horario después de eliminar
+                            } catch (error) {
+                                console.error('Error al eliminar la cita:', error);
+                                showMessage(`Error al eliminar la cita: ${error.message}`, 'error');
+                            } finally {
+                                hideLoading();
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error al generar el horario:', error);
+                showMessage(`Error al generar el horario: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Función para exportar a Excel (CSV)
+        exportExcelBtn.addEventListener('click', async () => {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/appointments`); // Obtener TODAS las citas
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const allAppointments = await response.json();
+
+                if (allAppointments.length === 0) {
+                    showMessage('No hay citas para exportar.', 'error');
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Fecha,Hora,Cliente,Duracion (minutos)\n"; // Encabezados CSV
+
+                allAppointments.forEach(appt => {
+                    const row = `${appt.date},${appt.time},"${appt.client_name}",${appt.duration || businessConfig.appointment_duration}`;
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "citas_agendadas.csv");
+                document.body.appendChild(link); // Requerido para Firefox
+                link.click();
+                document.body.removeChild(link); // Limpiar
+
+                showMessage('Citas exportadas a "citas_agendadas.csv".', 'success');
+            } catch (error) {
+                console.error('Error al exportar las citas:', error);
+                showMessage(`Error al exportar las citas: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Cargar configuración y generar horario al iniciar
+        window.onload = async () => {
+            await loadBusinessConfig();
+            generateScheduleBtn.click(); // Generar el horario para el día actual al cargar la página
+        };
+
+        // Asegurarse de que el horario se actualice automáticamente cuando se cambia la fecha de visualización
+        displayDateInput.addEventListener('change', () => {
+            generateScheduleBtn.click();
+        });
+
+    </script>
+</body>
+</html>

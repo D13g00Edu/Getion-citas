@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+pydantic
+# Si usas una base de datos, añade su dependencia aquí (ej. python-dotenv, pymongo, psycopg2-binary)
