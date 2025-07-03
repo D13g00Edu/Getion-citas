@@ -1,5 +1,5 @@
 # Getion-citas
-Este proyecto implementa un organizador de citas para negocios, permitiendo la gestión de horarios, el agendamiento de citas y la exportación de datos. La aplicación está dividida en un frontend (HTML/JavaScript) y un backend (FastAPI).
+Este proyecto implementa un organizador de citas para negocios, permitiendo la gestión de horarios, el agendamiento de citas y la exportación de datos. La aplicación está dividida en un frontend (HTML/JavaScript) y un backend (FastAPI).    
 
 ## ✨ Características
 

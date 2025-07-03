@@ -17,10 +17,11 @@ app = FastAPI(
 # Permite que el frontend (que se ejecutará en un navegador) se comunique con este backend.
 # En un entorno de producción, deberías restringir 'origins' a la URL específica de tu frontend.
 origins = [
-    "http://localhost",
-    "http://localhost:8000", # Por si el frontend se sirve desde otro puerto
-    "null" # Para permitir el acceso desde archivos HTML locales (file://)
-]
+    "https://6866b58c831ea5d916301540--bespoke-bublanina-0dc59e.netlify.app/"
+    #"http://localhost",
+    #"http://localhost:8000", # Por si el frontend se sirve desde otro puerto
+    #"null" # Para permitir el acceso desde archivos HTML locales (file://)
+]#
 
 app.add_middleware(
     CORSMiddleware,
